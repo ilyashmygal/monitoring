@@ -1,3 +1,6 @@
 .env
 prometheus_data
 grafana/storage
+db
+elasticsearch/elasticsearch-data-volume
+kibana

@@ -1,5 +1,6 @@
 version: '2.2'
 services:
+
   web:
     image: aspendigital/octobercms
     ports:
@@ -13,6 +14,9 @@ services:
       
   mysql:
     image: mysql:5.7
+    volumes:
+      - db_logs:/var/log/mysql
+    command: mysqld --general-log=1 --general-log-file=/var/log/mysql/mysql.log
     ports:
       - 3306:3306
     environment:
@@ -77,3 +81,74 @@ services:
     volumes:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
       - ./grafana/storage/:/var/lib/grafana
+  
+  elasticsearch:
+    image: elastic/elasticsearch:$STACK_VERSION
+    container_name: elasticsearch
+    restart: always
+    environment:
+      xpack.security.enabled: false
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: $ELASTIC_PASSWORD
+      path.data: /usr/share/elasticsearch/data
+    ulimits: 
+      memlock:
+        soft: -1 
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add: 
+      - IPC_LOCK
+    volumes:
+      - ./elasticsearch/elasticsearch-data-volume:/usr/share/elasticsearch/data
+      - ./elasticsearch/elastic_config.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  logstash:
+    container_name: logstash
+    image: elastic/logstash:$STACK_VERSION
+    restart: always
+    ports:
+     - "5000:5000"
+     - "9600:9600"
+    environment:
+      SERVER_NAME: logstash
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: $ELASTIC_PASSWORD
+      XPACK_MONITORING_ENABLED: true
+      PATH_CONFIG: /usr/share/logstash/confs
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./logstash/adapter_conf:/usr/share/logstash/confs
+      - db_logs:/usr/share/logstash/input
+
+  kibana:
+    container_name: kibana
+    image: elastic/kibana:$STACK_VERSION
+    restart: always
+    environment:
+      SERVER_NAME: kibana
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: $ELASTIC_PASSWORD
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      XPACK_SECURITY_ENABLED: false
+      PATH_DATA: /usr/share/kibana/data
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./kibana/data:/usr/share/kibana/data
+
+volumes: 
+  elasticsearch-data-volume:
+    driver: local
+  db_logs:
+    driver: local
