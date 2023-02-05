@@ -1,0 +1,29 @@
+
+filebeat.config.inputs:
+  path: ${path.config}/prospectors.d/*.yml
+  reload.enabled: false
+
+
+filebeat.modules:
+
+#MySQL module consumes error and mysql-slow logs from mounted volume.
+- module: mysql
+  error:
+    var.paths: ["/var/log/mysql/mysql.log*"]
+  slowlog:
+    var.paths: ["/var/log/mysql/mysql-slow.log*"]
+
+
+monitoring.enabled: true
+
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+
+logging.to_files: false
+
+
+setup:
+  kibana.host: "kibana:5601"
+  dashboards.enabled: true

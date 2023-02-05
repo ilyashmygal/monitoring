@@ -1,0 +1,12 @@
+metricbeat.modules:
+- module: system
+  period: 10s
+
+processors:
+  - add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+setup.kibana.host: "http://kibana:5601"
+setup.dashboards.enabled: true

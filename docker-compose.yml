@@ -147,6 +147,47 @@ services:
     volumes:
       - ./kibana/data:/usr/share/kibana/data
 
+  heartbeat:
+    container_name: heartbeat
+    hostname: heartbeat
+    user: root #To read the docker socket
+    image: elastic/heartbeat:$STACK_VERSION
+    volumes:
+      - ./heartbeat/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+    command: heartbeat -e -strict.perms=false
+
+  metricbeat:
+    container_name: metricbeat
+    hostname: metricbeat
+    user: root #To read the docker socket
+    image: elastic/metricbeat:$STACK_VERSION
+    volumes:
+      - ./metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    command: metricbeat -e -strict.perms=false
+    environment:
+      - "MYSQL_USER=${MYSQL_USER}"
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+
+  filebeat:
+    container_name: filebeat
+    hostname: filebeat
+    user: root #To read the docker socket
+    image: elastic/filebeat:$STACK_VERSION
+    volumes:
+      #Mount the Filebeat configuration so users can make edits.
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      #Mount the prospectors directory. Users can in turn add propspectors to this directory and they will be dynamically loaded.
+      - ./filebeat/prospectors.d/:/usr/share/filebeat/prospectors.d/
+      #Mount the nginx logs into the Filebeat container so we can access and index them using the Filebeat nginx module.
+      - ./logs/nginx/:/var/log/nginx/
+      #Mount the MySQL logs into the Filebeat container so we can access and and index them using the Filebeat MySQL module.
+      - db_logs:/var/log/mysql/
+    command: filebeat -e -strict.perms=false
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+
 volumes: 
   elasticsearch-data-volume:
     driver: local

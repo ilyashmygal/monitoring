@@ -1,0 +1,38 @@
+heartbeat.monitors:
+
+#Проверка всех контейнеров по ICMP 
+- type: icmp
+  schedule: '*/15 * * * * * *'
+  hosts: ["web","mysqld-metrics-exporter","node_exporter","elasticsearch","kibana","prometheus","mysql","alertmanager","blackbox-exporter","grafana","logstash"]
+  ipv4: true
+  ipv6: true
+  mode: any
+  timeout: 3s
+  wait: 1s
+
+- type: http
+  schedule: '@every 15s'
+  urls: ["https://otus.ru"]
+  ipv4: true
+  ipv6: true
+  mode: any
+  timeout: 3s
+  check.request:
+    method: "GET"
+  check.response:
+    status: 200
+
+- type: http
+  schedule: '@every 15s'
+  urls: ["https://google.com"]
+  ipv4: true
+  ipv6: true
+  mode: any
+  timeout: 3s
+  check.request:
+    method: "GET"
+  check.response:
+    status: 200
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]

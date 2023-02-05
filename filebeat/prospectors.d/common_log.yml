@@ -1,0 +1,4 @@
+- type: log
+  paths:
+  - '/var/log/mysql/*.log'
+  json.message_key: message
